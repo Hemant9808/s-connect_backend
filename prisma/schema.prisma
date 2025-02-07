@@ -38,7 +38,6 @@ model User {
   lastOtpAttempt      DateTime?
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @default(now())
-
   groupsCreated       Group[]    @relation("CreatedGroups")
   administeredGroups  GroupAdmin[]
   memberships         UserGroupMembership[]
@@ -84,9 +83,12 @@ model UserGroupMembership {
 }
 
 model Post {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  title     String
-  content   String
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  title              String
+  mainImg            String
+  description        String
+  secondaryImg       String[]
+  secondaryDesc      String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 

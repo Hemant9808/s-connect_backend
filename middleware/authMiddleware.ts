@@ -13,13 +13,15 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 export const authenticate = async (req:any, res: any, next: NextFunction) => {
   try {
     const token = req.header("Authorization")?.replace("Bearer ", "");
+    console.log(token);
+    
     if (!token) {
       return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-
+    console.log(user,"user");
     if (!user) {
       return res.status(401).json({ message: "Unauthorized: Invalid token" });
     }
