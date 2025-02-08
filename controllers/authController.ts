@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
+import { sendEmail } from "../services/emailSevices";
 
 dotenv.config();
 const prisma = new PrismaClient();
@@ -22,21 +23,58 @@ export const register = async (req: any, res: any) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); 
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         role: role || "USER",
         type: type || "STUDENT",
+        otp,
+        otpExpiry,
       },
     });
+    await sendEmail(email, "Verify your account", `Your OTP is: ${otp}`);
 
     return res.status(201).json({ message: "User registered successfully", user });
   } catch (error) {
     return res.status(500).json({ message: "Server error", error });
   }
 };
+
+
+
+export const verifyOtp = async (req: any, res: any) => {
+  try {
+    const { email, otp } = req.body;
+  console.log(email,otp);
+  
+    // Find user by email
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if OTP matches and is not expired
+    if (user.otp !== otp || !user.otpExpiry || new Date() > user.otpExpiry) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Clear OTP after successful verification
+    await prisma.user.update({
+      where: { email },
+      data: { otp: null, otpExpiry: null },
+    });
+
+    return res.status(200).json({ message: "OTP verified successfully. Account activated." });
+  } catch (error) {
+    console.error("OTP verification error:", error);
+    return res.status(500).json({ message: "Server error", error });
+  }
+};
+
 
 /**
  * User Login
