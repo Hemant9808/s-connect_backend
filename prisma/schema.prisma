@@ -1,102 +1,118 @@
-datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+  datasource db {
+    provider = "mongodb"
+    url      = env("DATABASE_URL")
+  }
+
+  generator client {
+    provider = "prisma-client-js"
+  }
+
+  enum UserRole {
+    SUPER_ADMIN
+    ADMIN
+    USER
+  }
+
+  enum UserType {
+    STUDENT
+    FACULTY
+  }
+
+  enum GroupCategory {
+    SECTION
+    CLUB
+    PLACEMENT
+    PUBLIC
+    UNIVERSAL
+  }
+
+
+
+model UserDetails {
+    id          String  @id @default(auto()) @map("_id") @db.ObjectId
+    systemId    String  @unique
+    name        String
+    gender      String
+    email       String
+    contact     String
+
+  
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
+  model User {
+    id                  String     @id @default(auto()) @map("_id") @db.ObjectId
+    email               String     @unique
+    role                UserRole   @default(USER)
+    type                UserType
+    otp                 String?
+    password            String
+    otpExpiry           DateTime?
+    otpAttempts         Int        @default(0)
+    lastOtpAttempt      DateTime?
+    createdAt           DateTime   @default(now())
+    updatedAt           DateTime   @default(now())
+    groupsCreated       Group[]    @relation("CreatedGroups")
+    administeredGroups  GroupAdmin[]
+    memberships         UserGroupMembership[]
+    posts               Post[]
 
-enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  USER
-}
+   
+   
+  }
 
-enum UserType {
-  STUDENT
-  FACULTY
-}
+  model Group {
+    id          String       @id @default(auto()) @map("_id") @db.ObjectId
+    name        String
+    description String?
+    category    GroupCategory
+    isPublic    Boolean      @default(false)
+    createdAt   DateTime     @default(now())
+    updatedAt   DateTime     @default(now())
 
-enum GroupCategory {
-  SECTION
-  CLUB
-  PLACEMENT
-  PUBLIC
-  UNIVERSAL
-}
+    createdBy   User         @relation("CreatedGroups", fields: [createdById], references: [id])
+    createdById String       @db.ObjectId
 
-model User {
-  id                  String     @id @default(auto()) @map("_id") @db.ObjectId
-  email               String     @unique
-  role                UserRole   @default(USER)
-  type                UserType
-  otp                 String?
-  password            String
-  otpExpiry           DateTime?
-  otpAttempts         Int        @default(0)
-  lastOtpAttempt      DateTime?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @default(now())
-  groupsCreated       Group[]    @relation("CreatedGroups")
-  administeredGroups  GroupAdmin[]
-  memberships         UserGroupMembership[]
-  posts               Post[]
-}
+    admins      GroupAdmin[]
+    members     UserGroupMembership[]
+    posts       Post[]
 
-model Group {
-  id          String       @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String?
-  category    GroupCategory
-  isPublic    Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @default(now())
+    @@unique([name, category])
+    @@index([category])
+  }
 
-  createdBy   User         @relation("CreatedGroups", fields: [createdById], references: [id])
-  createdById String       @db.ObjectId
+  model GroupAdmin {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    group     Group    @relation(fields: [groupId], references: [id])
+    groupId   String   @db.ObjectId
+    user      User     @relation(fields: [userId], references: [id])
+    userId    String   @db.ObjectId
+    createdAt DateTime @default(now())
+  }
 
-  admins      GroupAdmin[]
-  members     UserGroupMembership[]
-  posts       Post[]
+  model UserGroupMembership {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    user      User     @relation(fields: [userId], references: [id])
+    userId    String   @db.ObjectId
+    group     Group    @relation(fields: [groupId], references: [id])
+    groupId   String   @db.ObjectId
+    joinedAt  DateTime @default(now())
+  }
 
-  @@unique([name, category])
-  @@index([category])
-}
+  model Post {
+    id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+    title              String
+    mainImg            String
+    description        String
+    secondaryImg       String[]
+    secondaryDesc      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
 
-model GroupAdmin {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  group     Group    @relation(fields: [groupId], references: [id])
-  groupId   String   @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @db.ObjectId
-  createdAt DateTime @default(now())
-}
+    group     Group    @relation(fields: [groupId], references: [id])
+    groupId   String   @db.ObjectId
+    author    User     @relation(fields: [authorId], references: [id])
+    authorId  String   @db.ObjectId
 
-model UserGroupMembership {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @db.ObjectId
-  group     Group    @relation(fields: [groupId], references: [id])
-  groupId   String   @db.ObjectId
-  joinedAt  DateTime @default(now())
-}
-
-model Post {
-  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
-  title              String
-  mainImg            String
-  description        String
-  secondaryImg       String[]
-  secondaryDesc      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-
-  group     Group    @relation(fields: [groupId], references: [id])
-  groupId   String   @db.ObjectId
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String   @db.ObjectId
-
-  @@index([groupId])
-  @@index([authorId])
-}
+    @@index([groupId])
+    @@index([authorId])
+  }

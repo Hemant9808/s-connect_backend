@@ -93,7 +93,7 @@ export const login = async (req:any, res:any) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 
     return res.json({success:true, message: "Login successful", user,token });
   } catch (error) {
