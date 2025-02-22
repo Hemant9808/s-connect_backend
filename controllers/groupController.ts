@@ -243,3 +243,66 @@ export const getGroupMembers = async (
     }
   }
 };
+
+//fetch all groups
+export const getAllGroups = async (req: Request, res: Response): Promise<void> => {
+  try {
+      const groups = await prisma.group.findMany({
+          include: {
+              createdBy: true,   // Include creator details
+              admins: true,      // Include admins
+              members: true,     // Include members
+              posts: true,       // Include posts
+          }
+      });
+
+      res.status(200).json({ success: true, data: groups });
+  } catch (error) {
+      console.error("Error fetching groups:", error);
+      res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+//Remove Admin
+export const removeGroupAdmin = async (req: Request, res: Response): Promise<void> => {
+  try {
+      const { groupId, userId } = req.body;
+
+      // Check if the group exists
+      const group = await prisma.group.findUnique({
+          where: { id: groupId },
+          include: { admins: true },
+      });
+
+      if (!group) {
+          res.status(404).json({ success: false, message: "Group not found" });
+          return;
+      }
+
+      // Check if the admin exists
+      const adminRecord = await prisma.groupAdmin.findFirst({
+          where: { groupId, userId: userId },
+      });
+
+      if (!adminRecord) {
+          res.status(400).json({ success: false, message: "User is not an admin of this group" });
+          return;
+      }
+
+      // Ensure at least one admin remains
+      if (group.admins.length === 1) {
+          res.status(400).json({ success: false, message: "Group must have at least one admin" });
+          return;
+      }
+
+      // Remove the admin
+      await prisma.groupAdmin.deleteMany({
+          where: { groupId, userId: userId },
+      });
+
+      res.status(200).json({ success: true, message: "Admin removed successfully" });
+  } catch (error) {
+      console.error("Error removing admin:", error);
+      res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
