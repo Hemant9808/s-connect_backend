@@ -68,6 +68,7 @@ model UserDetails {
     isPublic    Boolean      @default(false)
     createdAt   DateTime     @default(now())
     updatedAt   DateTime     @default(now())
+    
 
     createdBy   User         @relation("CreatedGroups", fields: [createdById], references: [id])
     createdById String       @db.ObjectId
@@ -105,6 +106,7 @@ model UserDetails {
     description        String
     secondaryImg       String[]
     secondaryDesc      String
+    content            String?
     createdAt DateTime @default(now())
     updatedAt DateTime @default(now())
 

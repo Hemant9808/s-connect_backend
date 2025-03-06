@@ -14,3 +14,4 @@ router.get("/profile",authenticate, getProfile);
 router.get("/admin", authenticate, authorize(["ADMIN", "SUPER_ADMIN"]), adminAccess);
 
 export default router;
+

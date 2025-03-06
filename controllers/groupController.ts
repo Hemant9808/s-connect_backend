@@ -52,9 +52,10 @@ export const addGroupMember = async (
 
       // Check if user is already a member
       const existingMember = await tx.userGroupMembership.findFirst({
-        where: { groupId, userId },
+        where: {userId },
       });
-
+ console.log("existingMember");
+ 
       if (existingMember) throw new ApiError("User already in group", 409);
 
       // Create membership
@@ -152,8 +153,8 @@ export const createGroupPost = async (
   
   try {
     
-    const { groupId, title, description, mainImg, secondaryDesc,secondaryImg } = req.body;
-    const authorId = req.user!.id;
+    const { groupId, title, description, secondaryDesc,secondaryImg, content,mediaUrl,authorId } = req.body;
+    // const authorId = req.user!.id;
 
     const result = await prisma.$transaction(async (tx) => {
       // Fetch group and author details
@@ -179,7 +180,7 @@ export const createGroupPost = async (
 
       // Create the post
       return tx.post.create({
-        data: { title, description, mainImg, secondaryDesc,secondaryImg, groupId, authorId },
+        data: { title, description:description, mainImg:mediaUrl, secondaryDesc:secondaryDesc,secondaryImg:secondaryImg, groupId, authorId,content },
       });
     });
 
