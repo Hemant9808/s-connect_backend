@@ -307,3 +307,145 @@ export const removeGroupAdmin = async (req: Request, res: Response): Promise<voi
       res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+
+
+
+
+
+
+// Create Group functionality
+
+
+export const createGroup = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Destructure fields from the request body.
+    // Expecting:
+    // name, description, category, creatorId are required.
+    // members, admins, tags are optional arrays.
+    const { name, description, category, creatorId, members = [], admins = [], tags } = req.body;
+
+    // Create the group record.
+    const group = await prisma.group.create({
+      data: {
+        name,
+        description,
+        category,      // Make sure this value matches one of your Prisma enum values.
+        // tags,          // Remove or adjust if your Prisma model does not support tags.
+        createdBy: { connect: { id: creatorId } },
+      },
+    });
+
+    // Combine creator with any additional members or admins (to ensure they all become members)
+    const allMemberIds = Array.from(new Set([creatorId, ...members, ...admins]));
+
+    // Create membership records for each unique user.
+    for (const userId of allMemberIds) {
+      await prisma.userGroupMembership.create({
+        data: {
+          groupId: group.id,
+          userId,
+        },
+      });
+    }
+
+    // If no admins are provided, default to creator.
+    const groupAdminIds = admins.length > 0 ? Array.from(new Set([...admins, creatorId])) : [creatorId];
+
+    // Create admin records for each admin user.
+    for (const userId of groupAdminIds) {
+      await prisma.groupAdmin.create({
+        data: {
+          groupId: group.id,
+          userId,
+        },
+      });
+    }
+
+    res.status(201).json({ success: true, data: group });
+  } catch (error) {
+    console.error("Error creating group:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+//Update Group
+export const updateGroup = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { groupId, name, description, category, isPublic } = req.body;
+    const requesterId = req.user!.id;
+
+    // Debug log to see incoming values
+    console.log('Update payload:', { name, description, category, isPublic });
+
+    // Validate input first before starting transaction
+    if (!groupId) throw new ApiError("Group ID is required", 400);
+    if (category && !Object.values(GroupCategory).includes(category)) {
+      throw new ApiError("Invalid group category", 400);
+    }
+
+    const updatedGroup = await prisma.$transaction(async (tx) => {
+      // Optimized query - only fetch necessary fields
+      const group = await tx.group.findUnique({
+        where: { id: groupId },
+        select: {
+          id: true,
+          createdById: true,
+          admins: { select: { userId: true } },
+        },
+      });
+
+      if (!group) throw new ApiError("Group not found", 404);
+
+      // Authorization check using cached user info from auth middleware
+      const isSuperAdmin = req.user?.role === UserRole.SUPER_ADMIN;
+      const isGroupAdmin = group.admins.some(a => a.userId === requesterId);
+      const isGroupCreator = group.createdById === requesterId;
+
+      if (!isSuperAdmin && !isGroupAdmin && !isGroupCreator) {
+        throw new ApiError("Unauthorized to update group", 403);
+      }
+
+      // Build update payload
+      const updateData: any = {};
+      if (name) updateData.name = name;
+      if (description) updateData.description = description;
+      if (category) updateData.category = category;
+      if (typeof isPublic === 'boolean') updateData.isPublic = isPublic;
+
+      if (Object.keys(updateData).length === 0) {
+        throw new ApiError("No valid fields to update", 400);
+      }
+
+      return tx.group.update({
+        where: { id: groupId },
+        data: updateData,
+        select: { 
+          id: true,
+          name: true,
+          description: true,
+          category: true,
+          isPublic: true,
+          updatedAt: true
+        }
+      });
+    }, {
+      maxWait: 10000,
+      timeout: 10000
+    });
+
+    res.status(200).json(updatedGroup);
+  } catch (error) {
+    console.error('Update Group Error:', error);
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+};
