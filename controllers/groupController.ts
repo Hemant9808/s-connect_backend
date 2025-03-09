@@ -327,15 +327,15 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
     // Expecting:
     // name, description, category, creatorId are required.
     // members, admins, tags are optional arrays.
-    const { name, description, category, creatorId, members = [], admins = [], tags } = req.body;
-
+    const  { name, description, category, creatorId, members = [], admins = [], tags,imageUrl } = req.body;
     // Create the group record.
     const group = await prisma.group.create({
       data: {
         name,
         description,
-        category,      // Make sure this value matches one of your Prisma enum values.
-        // tags,          // Remove or adjust if your Prisma model does not support tags.
+        category,      
+        tags , 
+        imageUrl ,  
         createdBy: { connect: { id: creatorId } },
       },
     });
