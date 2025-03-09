@@ -52,7 +52,11 @@ export const addGroupMember = async (
 
       // Check if user is already a member
       const existingMember = await tx.userGroupMembership.findFirst({
-        where: {userId },
+        // where: {userId },
+        where: { 
+          userId, 
+          groupId 
+        },
       });
  console.log("existingMember");
  
