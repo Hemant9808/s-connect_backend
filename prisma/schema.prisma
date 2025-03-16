@@ -44,6 +44,11 @@ model UserDetails {
     email               String     @unique
     role                UserRole   @default(USER)
     type                UserType
+    name                String?
+    contact             String?
+    year                Int?
+    branch              String?
+    section             String?
     otp                 String?
     password            String
     otpExpiry           DateTime?

@@ -157,8 +157,10 @@ export const createGroupPost = async (
   
   try {
     
-    const { groupId, title, description, secondaryDesc,secondaryImg, content,mediaUrl,authorId } = req.body;
+    const { groupId, title, description, secondaryDesc,secondaryImg, content,mediaUrl,authorId ="67b49a81293a1b1ab92883ff" } = req.body;
+    console.log("req.body",req.body);
     // const authorId = req.user!.id;
+
 
     const result = await prisma.$transaction(async (tx) => {
       // Fetch group and author details
@@ -184,8 +186,56 @@ export const createGroupPost = async (
 
       // Create the post
       return tx.post.create({
-        data: { title, description:description, mainImg:mediaUrl, secondaryDesc:secondaryDesc,secondaryImg:secondaryImg, groupId, authorId,content },
+        data: { title, description:description, mainImg:mediaUrl, secondaryDesc:secondaryDesc,secondaryImg:secondaryImg, groupId, authorId:"67b49a81293a1b1ab92883ff",content },
       });
+    });
+
+    // Send success response
+    res.status(201).json(result);
+  } catch (error) {
+    console.error(error);
+
+    // Handle custom errors
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+};
+
+
+export const getPosts = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  
+  try {
+    
+    const { groupId  } = req.body;
+    console.log("req.body",req.body);
+    // const authorId = req.user!.id;
+    
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Fetch group and author details
+      const [posts] = await Promise.all([
+        tx.post.findMany({ where: { groupId: groupId },
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true, // Add other author fields you want to retrieve
+                email: true,
+              },
+            },
+          },
+         }),
+        // tx.user.findUnique({ where: { id: authorId } }),
+      ]);
+
+      
+      return posts;
     });
 
     // Send success response
@@ -257,7 +307,17 @@ export const getAllGroups = async (req: Request, res: Response): Promise<void> =
               createdBy: true,   // Include creator details
               admins: true,      // Include admins
               members: true,     // Include members
-              posts: true,       // Include posts
+              posts: {
+                include: {
+                  author: {
+                    select: {
+                      id: true,
+                      name: true, 
+                      email: true,
+                    },
+                  },
+                },
+              },       
           }
       });
 
