@@ -10,5 +10,6 @@ router.post("/events",
      createEvent);
 router.put("/events/:eventId", updateEvent);
 router.delete("/events/:eventId", deleteEvent);
+router.get("/events", authenticate, getEvents);         //Added by Nilesh Don
 
 export default router;
