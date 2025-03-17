@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 import { authenticate, authorize } from "../middleware/authMiddleware";
-import { createEvent, deleteEvent, updateEvent } from "../controllers/eventController";
+import { createEvent, deleteEvent, updateEvent, getEvents } from "../controllers/eventController";
 import { UserRole } from "@prisma/client";
 
 const router = Router();
