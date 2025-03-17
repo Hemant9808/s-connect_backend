@@ -6,41 +6,41 @@ import ApiError from "../utils/error";
 
 const prisma = new PrismaClient();
 
-export const createEvent = async (
-  req: any,
-  res: Response
-): Promise<void> => {
-  try {
-    const { title, description, dateTime, mediaUrl, targetType, targetValue } = req.body;
-    const authorId = req.user!.id;
+// export const createEvent = async (
+//   req: any,
+//   res: Response
+// ): Promise<void> => {
+//   try {
+//     const { title, description, dateTime, mediaUrl, targetType, targetValue } = req.body;
+//     const authorId = req.user!.id;
 
-    // Validate target type-value combination
-    if (targetType !== "EVERYONE" && !targetValue) {
-      throw new ApiError("Target value is required for this target type", 400);
-    }
+//     // Validate target type-value combination
+//     if (targetType !== "EVERYONE" && !targetValue) {
+//       throw new ApiError("Target value is required for this target type", 400);
+//     }
 
-    const event = await prisma.event.create({
-      data: {
-        title,
-        description,
-        dateTime: new Date(dateTime),
-        mediaUrl,
-        targetType,
-        targetValue,
-        authorId
-      },
-    });
+//     const event = await prisma.event.create({
+//       data: {
+//         title,
+//         description,
+//         dateTime: new Date(dateTime),
+//         mediaUrl,
+//         targetType,
+//         targetValue,
+//         authorId
+//       },
+//     });
 
-    res.status(201).json(event);
-  } catch (error) {
-    console.error(error);
-    if (error instanceof ApiError) {
-      res.status(error.statusCode).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "Server error" });
-    }
-  }
-};
+//     res.status(201).json(event);
+//   } catch (error) {
+//     console.error(error);
+//     if (error instanceof ApiError) {
+//       res.status(error.statusCode).json({ message: error.message });
+//     } else {
+//       res.status(500).json({ message: "Server error" });
+//     }
+//   }
+// };
 
 export const updateEvent = async (
   req: any,
@@ -151,5 +151,43 @@ export const getEvents = async (
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+export const createEvent = async (
+  req: any,
+  res: Response
+): Promise<void> => {
+  try {
+    const { title, description, dateTime, mediaUrl, targetType, targetValue } = req.body;
+    const authorId = req.user.id; // Ensure authentication middleware is enabled
+
+    // Validation
+    if (!title || !description || !dateTime) {
+      throw new ApiError("Missing required fields", 400);
+    }
+
+    const event = await prisma.event.create({
+      data: {
+        title,
+        description,
+        dateTime: new Date(dateTime),
+        mediaUrl: mediaUrl || null,
+        targetType,
+        targetValue,
+        authorId
+      },
+    });
+
+    res.status(201).json(event);
+  } catch (error) {
+    console.error("Create Event Error:", error);
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
 };
