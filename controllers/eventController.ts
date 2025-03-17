@@ -129,14 +129,12 @@ export const deleteEvent = async (
 
 // Nilesh Don ka code
 export const getEvents = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.user!.id;
-
+    // Get all events, not just current user's
     const events = await prisma.event.findMany({
-      where: { authorId: userId },
       include: {
         author: {
           select: {
@@ -152,10 +150,6 @@ export const getEvents = async (
     res.status(200).json(events);
   } catch (error) {
     console.error(error);
-    if (error instanceof ApiError) {
-      res.status(error.statusCode).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "Server error" });
-    }
+    res.status(500).json({ message: "Server error" });
   }
 };
