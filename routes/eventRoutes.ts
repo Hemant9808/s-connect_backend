@@ -24,13 +24,32 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-// Unified routes with proper syntax
-router.route("/events")
-  .post(authenticate, authorize([UserRole.SUPER_ADMIN]), createEvent)
-  .get(authenticate, getEvents);
+// POST /api/event/events
+router.post(
+  "/events",
+  authenticate,
+  authorize([UserRole.SUPER_ADMIN]),
+  createEvent
+);
 
-router.route("/events/:eventId")
-  .put(authenticate, authorize([UserRole.SUPER_ADMIN]), updateEvent)
-  .delete(authenticate, authorize([UserRole.SUPER_ADMIN]), deleteEvent);
+// GET /api/event/events
+router.get("/events", 
+  authenticate,
+  getEvents
+);
+
+// PUT /api/event/events/:eventId
+router.put("/events/:eventId",
+  authenticate,
+  authorize([UserRole.SUPER_ADMIN]),
+  updateEvent
+);
+
+// DELETE /api/event/events/:eventId
+router.delete("/events/:eventId",
+  authenticate,
+  authorize([UserRole.SUPER_ADMIN]),
+  deleteEvent
+);
 
 export default router;
