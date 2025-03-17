@@ -513,3 +513,42 @@ export const updateGroup = async (
     }
   }
 };
+
+
+export const getPostById = async (req: any, res: any) => {
+  try {
+    const { postId } = req.body;
+
+    if (!postId) {
+      return res.status(400).json({ success: false, message: "postId is required" });
+    }
+
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true, // Include relevant author fields
+            email: true,
+          },
+        },
+        group: {
+          select: {
+            id: true,
+            name: true, // Include relevant group fields
+          },
+        },
+      },
+    });
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: "Post not found" });
+    }
+
+    return res.status(200).json({ success: true, data: post });
+  } catch (error) {
+    console.error("Error fetching post:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};

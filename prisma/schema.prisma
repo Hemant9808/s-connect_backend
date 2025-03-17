@@ -60,6 +60,7 @@ model UserDetails {
     administeredGroups  GroupAdmin[]
     memberships         UserGroupMembership[]
     posts               Post[]
+    events              Event[]
 
    
    
@@ -124,3 +125,31 @@ model UserDetails {
     @@index([groupId])
     @@index([authorId])
   }
+
+  
+enum EventTargetType {
+  EVERYONE
+  GROUP
+  YEAR       // Can be replaced with actual years later
+  DEPARTMENT // Can be replaced with actual departments later
+}
+
+  model Event {
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  dateTime    DateTime
+  mediaUrl    String?
+  targetType  EventTargetType
+  targetValue String?        // Can store group ID, year value, or department name
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now())
+  
+  // Relationships
+  author      User           @relation(fields: [authorId], references: [id])
+  authorId    String         @db.ObjectId
+
+  @@index([authorId])
+  @@index([targetType])
+  @@index([createdAt])
+}

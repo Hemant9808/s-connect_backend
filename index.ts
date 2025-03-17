@@ -5,6 +5,7 @@ import { PrismaClient } from "@prisma/client";
 // import authRoutes from "./controllers/authController";
 import authRoutes from "./routes/authRoutes";
 import groupRoutes from "./routes/groupRoutes";
+import eventRoutes from "./routes/eventRoutes";
 import cors from "cors";
 dotenv.config();
 import multer from 'multer';
@@ -25,6 +26,7 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/group", groupRoutes);
+app.use("/api/event",eventRoutes );
 cloudinaryV2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
