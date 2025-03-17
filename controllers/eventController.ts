@@ -118,3 +118,44 @@ export const deleteEvent = async (
     }
   }
 };
+
+
+
+
+
+
+
+
+
+// Nilesh Don ka code
+export const getEvents = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+
+    const events = await prisma.event.findMany({
+      where: { authorId: userId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { dateTime: 'asc' },
+    });
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+};
