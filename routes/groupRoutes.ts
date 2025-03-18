@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware";
-import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById } from "../controllers/groupController";
+import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById, getGroupById } from "../controllers/groupController";
 
 const router = Router();
 
