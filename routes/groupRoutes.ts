@@ -14,5 +14,6 @@ router.post("/create", createGroup); // New group creation endpoint
 router.put("/update", authenticate, updateGroup);
 router.post("/getPosts", getPosts);
 router.post("/getPostById", getPostById);
+router.get("/:groupId", getGroupById);
 
 export default router;
