@@ -552,3 +552,50 @@ export const getPostById = async (req: any, res: any) => {
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+
+
+
+
+
+
+
+// Nilesh Tyagi Ji codes again
+export const getGroupById = async (req: Request, res: Response) => {
+  try {
+    const { groupId } = req.params;
+    
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      include: {
+        createdBy: true,
+        admins: {
+          include: {
+            user: true
+          }
+        },
+        members: true,
+        posts: true
+      }
+    });
+
+    if (!group) throw new ApiError("Group not found", 404);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...group,
+        totalMembers: group.members.length,
+        totalPosts: group.posts.length
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+};
+
