@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware";
-import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById, getGroupById } from "../controllers/groupController";
+import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById, getGroupById, deleteGroup } from "../controllers/groupController";
 
 const router = Router();
 
@@ -15,5 +15,6 @@ router.put("/update", authenticate, updateGroup);
 router.post("/getPosts", getPosts);
 router.post("/getPostById", getPostById);
 router.get("/:groupId", getGroupById);
+router.delete('/:groupId', authenticate, deleteGroup);
 
 export default router;
