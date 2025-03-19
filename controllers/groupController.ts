@@ -599,3 +599,58 @@ export const getGroupById = async (req: Request, res: Response) => {
   }
 };
 
+
+
+
+
+
+
+
+export const deleteGroup = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { groupId } = req.params;
+    const userId = req.user!.id;
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Verify group exists
+      const group = await tx.group.findUnique({
+        where: { id: groupId },
+        include: { createdBy: true, admins: true },
+      });
+
+      if (!group) throw new ApiError("Group not found", 404);
+
+      // Authorization check
+      const isSuperAdmin = req.user!.role === UserRole.SUPER_ADMIN;
+      const isGroupCreator = group.createdById === userId;
+      
+      if (!isSuperAdmin && !isGroupCreator) {
+        throw new ApiError("Unauthorized to delete this group", 403);
+      }
+
+      // Delete related records first
+      await Promise.all([
+        tx.userGroupMembership.deleteMany({ where: { groupId } }),
+        tx.groupAdmin.deleteMany({ where: { groupId } }),
+        tx.post.deleteMany({ where: { groupId } }),
+      ]);
+
+      // Finally delete the group
+      return tx.group.delete({
+        where: { id: groupId },
+      });
+    });
+
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.error('Delete Group Error:', error);
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+};
