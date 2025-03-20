@@ -26,6 +26,15 @@
     UNIVERSAL
   }
 
+  enum branch{
+    CSE
+    ECE
+    MECH
+    CIVIL
+    EEE
+    IT
+  }
+
 
 
 model UserDetails {
@@ -36,7 +45,7 @@ model UserDetails {
     email       String
     contact     String
 
-  
+   
 }
 
   model User {
@@ -76,6 +85,10 @@ model UserDetails {
     createdAt   DateTime     @default(now())
     updatedAt   DateTime     @default(now())
     tags        String[]
+    year        Int?
+    branch      branch?
+    section     String?
+
 
     createdBy   User         @relation("CreatedGroups", fields: [createdById], references: [id])
     createdById String       @db.ObjectId

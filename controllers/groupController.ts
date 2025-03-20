@@ -383,12 +383,8 @@ export const removeGroupAdmin = async (req: Request, res: Response): Promise<voi
 
 export const createGroup = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Destructure fields from the request body.
-    // Expecting:
-    // name, description, category, creatorId are required.
-    // members, admins, tags are optional arrays.
-    const  { name, description, category, creatorId, members = [], admins = [], tags,imageUrl } = req.body;
-    // Create the group record.
+     const  { name, description, category, creatorId, members = [], admins = [], tags,imageUrl,year,section,branch } = req.body;
+     console.log("req.body",req.body);
     const group = await prisma.group.create({
       data: {
         name,
@@ -397,13 +393,15 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
         tags , 
         imageUrl ,  
         createdBy: { connect: { id: creatorId } },
+        year,
+        section,
+        branch,
       },
     });
+    console.log("group",group);
 
-    // Combine creator with any additional members or admins (to ensure they all become members)
     const allMemberIds = Array.from(new Set([creatorId, ...members, ...admins]));
 
-    // Create membership records for each unique user.
     for (const userId of allMemberIds) {
       await prisma.userGroupMembership.create({
         data: {
@@ -413,10 +411,8 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
       });
     }
 
-    // If no admins are provided, default to creator.
     const groupAdminIds = admins.length > 0 ? Array.from(new Set([...admins, creatorId])) : [creatorId];
 
-    // Create admin records for each admin user.
     for (const userId of groupAdminIds) {
       await prisma.groupAdmin.create({
         data: {
@@ -435,7 +431,6 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
 
 
 
-//Update Group
 export const updateGroup = async (
   req: AuthenticatedRequest,
   res: Response
@@ -444,17 +439,14 @@ export const updateGroup = async (
     const { groupId, name, description, category, isPublic } = req.body;
     const requesterId = req.user!.id;
 
-    // Debug log to see incoming values
     console.log('Update payload:', { name, description, category, isPublic });
 
-    // Validate input first before starting transaction
     if (!groupId) throw new ApiError("Group ID is required", 400);
     if (category && !Object.values(GroupCategory).includes(category)) {
       throw new ApiError("Invalid group category", 400);
     }
 
     const updatedGroup = await prisma.$transaction(async (tx) => {
-      // Optimized query - only fetch necessary fields
       const group = await tx.group.findUnique({
         where: { id: groupId },
         select: {
@@ -466,7 +458,6 @@ export const updateGroup = async (
 
       if (!group) throw new ApiError("Group not found", 404);
 
-      // Authorization check using cached user info from auth middleware
       const isSuperAdmin = req.user?.role === UserRole.SUPER_ADMIN;
       const isGroupAdmin = group.admins.some(a => a.userId === requesterId);
       const isGroupCreator = group.createdById === requesterId;
@@ -475,7 +466,6 @@ export const updateGroup = async (
         throw new ApiError("Unauthorized to update group", 403);
       }
 
-      // Build update payload
       const updateData: any = {};
       if (name) updateData.name = name;
       if (description) updateData.description = description;
@@ -554,13 +544,6 @@ export const getPostById = async (req: any, res: any) => {
 };
 
 
-
-
-
-
-
-
-// Nilesh Tyagi Ji codes again
 export const getGroupById = async (req: Request, res: Response) => {
   try {
     const { groupId } = req.params;
@@ -654,3 +637,52 @@ export const deleteGroup = async (
     }
   }
 };
+const checkAddMemberCondtions = (user,group) => { 
+  if (!group) throw new ApiError("Group not found", 404);
+  if (!user) throw new ApiError("User not found", 404);
+  if(user.role === UserRole.SUPER_ADMIN) return true;
+  if (group.isPublic) return true;
+  if (group.createdById === user.id) return true;
+  if (group.admins.some((a) => a.userId === user.id)) return true;
+  if (group.members.some((m) => m.userId === user.id)) return true;
+
+  if(group.year == user.year && group.branch == user.branch &&
+    (group.section === undefined || group.section === user.section)
+    ){
+    return true;
+  }
+  return false;
+ 
+  
+}
+
+export const  selfAddMember =async(req,res)=>{
+   const {user} = req.user; 
+   const {groupId} = req.body;
+
+   const group = prisma.group.findUnique({
+    where:{
+      id:groupId
+    }
+   })
+
+   const iseligible = checkAddMemberCondtions(user,group);
+   if(!iseligible){
+   return res.status(403).json({message:"You are not eligible to join this group"});
+   
+
+  }
+  const response=await prisma.userGroupMembership.create({
+    data:{
+      userId:user.id,
+      groupId:groupId
+    }
+ })
+
+ return res.status(200).json({response,message:"Successfully added to the group",status:true});
+
+
+
+
+  }
+
