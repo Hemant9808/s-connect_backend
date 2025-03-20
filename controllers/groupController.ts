@@ -642,13 +642,22 @@ const checkAddMemberCondtions = (user,group) => {
   if (!user) throw new ApiError("User not found", 404);
   if(user.role === UserRole.SUPER_ADMIN) return true;
   if (group.isPublic) return true;
-  if (group.createdById === user.id) return true;
-  if (group.admins.some((a) => a.userId === user.id)) return true;
-  if (group.members.some((m) => m.userId === user.id)) return true;
+  if (group?.createdById === user.id) return true;
+  if (Array.isArray(group?.admins) && group?.admins?.some((a) => a.userId === user.id)) return true;
+  // if (group?.members && group?.members?.some((m:any) => m.userId === user.id)) return true;
+  if (Array.isArray(group?.members) && group.members.some((m: any) => m.userId === user.id)) {
+   
+    return true;
+}
+
+console.log(group.year,user.year,group.branch,user.branch,group.section,user.section)
+
 
   if(group.year == user.year && group.branch == user.branch &&
-    (group.section === undefined || group.section === user.section)
+    (group.section === null || group.section === undefined ||user.section === null || group.section === user.section)
     ){
+      console.log(group.year,user.year,group.branch,user.branch,group.section,user.section)
+      console.log("rejectng from here")
     return true;
   }
   return false;
@@ -657,20 +666,21 @@ const checkAddMemberCondtions = (user,group) => {
 }
 
 export const  selfAddMember =async(req,res)=>{
-   const {user} = req.user; 
+   const user = req.user; 
    const {groupId} = req.body;
 
-   const group = prisma.group.findUnique({
+   const group = await prisma.group.findUnique({
     where:{
       id:groupId
     }
    })
 
+   console.log("group",group);
+
    const iseligible = checkAddMemberCondtions(user,group);
    if(!iseligible){
    return res.status(403).json({message:"You are not eligible to join this group"});
-   
-
+  
   }
   const response=await prisma.userGroupMembership.create({
     data:{
@@ -678,6 +688,7 @@ export const  selfAddMember =async(req,res)=>{
       groupId:groupId
     }
  })
+
 
  return res.status(200).json({response,message:"Successfully added to the group",status:true});
 

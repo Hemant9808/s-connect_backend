@@ -16,7 +16,7 @@ router.post("/getPosts", getPosts);
 router.post("/getPostById", getPostById);
 router.get("/:groupId", getGroupById);
 router.delete('/:groupId', authenticate, deleteGroup);
-router.post('/selfAddMember', selfAddMember);
+router.post('/selfAddMember',authenticate, selfAddMember);
 
 
 router.put("/groups/posts/:postId", editGroupPost);
