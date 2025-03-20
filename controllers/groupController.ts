@@ -686,3 +686,113 @@ export const  selfAddMember =async(req,res)=>{
 
   }
 
+
+
+
+  export const editGroupPost = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { postId } = req.params; // Post ID from URL params
+      console.log("req.body",req.params,req.body);
+      const { title, description, secondaryDesc, secondaryImg, content, mediaUrl } = req.body; // Fields to update
+      // const authorId = req.user!.id; // Authenticated user ID
+  
+      const result = await prisma.$transaction(async (tx) => {
+        // Fetch the post and author details
+        const [post] = await Promise.all([
+          tx.post.findUnique({ where: { id: postId } }),
+          // tx.user.findUnique({ where: { id: authorId } }),
+        ]);
+        console.log("post ...",post);
+
+        if (!post) throw new ApiError("Post not found", 404);
+        // if (!author) throw new ApiError("User not found", 404);
+  
+        // Check if the user is the author or a super admin
+        // const isAuthor = post.authorId === authorId;
+        // const isSuperAdmin = author.role === UserRole.SUPER_ADMIN;
+  
+        // if (!isAuthor && !isSuperAdmin) {
+        //   throw new ApiError("Not authorized to edit this post", 403);
+        // }
+  
+        // Update the post
+        return tx.post.update({
+          where: { id: postId },
+          data: {
+            title,
+            description,
+            secondaryDesc,
+            secondaryImg,
+            content,
+            mainImg: mediaUrl,
+          },
+        });
+      });
+  
+      // Send success response
+      console.log("result",result);
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error(error);
+  
+      // Handle custom errors
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Server error" });
+      }
+    }
+  };
+
+
+
+
+  export const deleteGroupPost = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { postId } = req.params; // Post ID from URL params
+      // const authorId = req.user!.id; // Authenticated user ID
+  
+      const result = await prisma.$transaction(async (tx) => {
+        // Fetch the post and author details
+        const [post] = await Promise.all([
+          tx.post.findUnique({ where: { id: postId } }),
+          // tx.user.findUnique({ where: { id: authorId } }),
+        ]);
+  
+        if (!post) throw new ApiError("Post not found", 404);
+        // if (!author) throw new ApiError("User not found", 404);
+  
+        // Check if the user is the author or a super admin
+        // const isAuthor = post.authorId === authorId;
+        // const isSuperAdmin = author.role === UserRole.SUPER_ADMIN;
+  
+        // if (!isAuthor && !isSuperAdmin) {
+        //   throw new ApiError("Not authorized to delete this post", 403);
+        // }
+  
+        // Delete the post
+        return tx.post.delete({
+          where: { id: postId },
+        });
+      });
+  
+      // Send success response
+      res.status(200).json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.error(error);
+  
+      // Handle custom errors
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Server error" });
+      }
+    }
+  };
