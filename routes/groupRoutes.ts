@@ -24,10 +24,10 @@ router.put("/groups/posts/:postId", editGroupPost);
 router.delete("/groups/posts/:postId", deleteGroupPost);
 
 // Get user's joined groups
-router.get('/me', authenticate, groupController.getMyGroups);
+router.get('/me', authenticate, getMyGroups);
 
 // Get all posts for home feed
-router.get('/posts/all', authenticate, groupController.getAllPosts);
+router.get('/posts/all', getAllPosts);
 
 router.get("/:groupId/posts", authenticate, getGroupPosts); // Get posts for a specific group
 
