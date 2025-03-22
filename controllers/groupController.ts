@@ -894,32 +894,65 @@ export const getAllPosts = async (
 
 
 
-export const getGroupPosts = async (
+// export const getGroupPosts = async (
+//   req: AuthenticatedRequest,
+//   res: Response
+// ): Promise<void> => {
+//   try {
+//     const { groupId } = req.params;
+
+//     // Fetch posts for the specific group
+//     const posts = await prisma.post.findMany({
+//       where: { groupId },
+//       include: {
+//         author: {
+//           select: {
+//             id: true,
+//             name: true,
+//             email: true,
+//           },
+//         },
+//         group: true,
+//       },
+//       orderBy: { createdAt: 'desc' },
+//     });
+
+//     res.status(200).json({ success: true, data: posts });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+export const getMyGroups = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
-    const { groupId } = req.params;
+    const userId = req.user!.id;
 
-    // Fetch posts for the specific group
-    const posts = await prisma.post.findMany({
-      where: { groupId },
+    const memberships = await prisma.userGroupMembership.findMany({
+      where: { userId },
       include: {
-        author: {
+        group: {
           select: {
             id: true,
             name: true,
-            email: true,
+            description: true,
+            category: true,
+            imageUrl: true,
+            createdAt: true,
+            // Exclude relations that cause circular references
           },
         },
-        group: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { group: { createdAt: 'desc' } },
     });
 
-    res.status(200).json({ success: true, data: posts });
+    const groups = memberships.map((membership) => membership.group);
+    res.status(200).json({ success: true, data: groups });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
 };
