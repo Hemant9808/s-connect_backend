@@ -849,12 +849,16 @@ export const getMyGroups = async (
   }
 };
 
+
 // Get all posts for home feed
 export const getAllPosts = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
+    const userId = req.user!.id;
+
+    // Fetch all posts, including those from groups the user hasn't joined
     const posts = await prisma.post.findMany({
       include: {
         author: {
@@ -866,7 +870,37 @@ export const getAllPosts = async (
         },
         group: true,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.status(200).json({ success: true, data: posts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getGroupPosts = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const { groupId } = req.params;
+
+    // Fetch posts for the specific group
+    const posts = await prisma.post.findMany({
+      where: { groupId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        group: true,
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
     res.status(200).json({ success: true, data: posts });
