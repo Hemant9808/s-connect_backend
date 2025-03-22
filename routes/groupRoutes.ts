@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware";
-import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById, getGroupById, deleteGroup, editGroupPost, deleteGroupPost, selfAddMember } from "../controllers/groupController";
+import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById, getGroupById, deleteGroup, editGroupPost, deleteGroupPost, selfAddMember, getMyGroups, getAllPosts } from "../controllers/groupController";
 
 const router = Router();
 
@@ -22,5 +22,11 @@ router.post('/selfAddMember',authenticate, selfAddMember);
 router.put("/groups/posts/:postId", editGroupPost);
 
 router.delete("/groups/posts/:postId", deleteGroupPost);
+
+// Get user's joined groups
+router.get('/me', authenticate, groupController.getMyGroups);
+
+// Get all posts for home feed
+router.get('/posts/all', authenticate, groupController.getAllPosts);
 
 export default router;
