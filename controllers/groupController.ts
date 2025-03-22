@@ -665,38 +665,54 @@ console.log(group.year,user.year,group.branch,user.branch,group.section,user.sec
   
 }
 
-export const  selfAddMember =async(req,res)=>{
-   const user = req.user; 
-   const {groupId} = req.body;
+export const selfAddMember = async (req, res) => {
+  const user = req.user;
+  const { groupId } = req.body;
 
-   const group = await prisma.group.findUnique({
-    where:{
-      id:groupId
+  try {
+    // Check if group exists
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+    });
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
     }
-   })
 
-   console.log("group",group);
-
-   const iseligible = checkAddMemberCondtions(user,group);
-   if(!iseligible){
-   return res.status(403).json({message:"You are not eligible to join this group"});
-  
-  }
-  const response=await prisma.userGroupMembership.create({
-    data:{
-      userId:user.id,
-      groupId:groupId
+    // Check if user is already a member
+    const existingMembership = await prisma.userGroupMembership.findFirst({
+      where: {
+        userId: user.id,
+        groupId: groupId,
+      },
+    });
+    if (existingMembership) {
+      return res.status(409).json({ message: "User is already in the group" });
     }
- })
 
+    // Check eligibility conditions
+    const isEligible = checkAddMemberCondtions(user, group);
+    if (!isEligible) {
+      return res.status(403).json({ message: "Not eligible to join" });
+    }
 
- return res.status(200).json({response,message:"Successfully added to the group",status:true});
+    // Create membership
+    const response = await prisma.userGroupMembership.create({
+      data: {
+        userId: user.id,
+        groupId: groupId,
+      },
+    });
 
-
-
-
+    res.status(200).json({ response, message: "Successfully joined", status: true });
+  } catch (error) {
+    console.error("Join error:", error);
+    // Handle unique constraint violation (if schema has the constraint)
+    if (error.code === "P2002") {
+      return res.status(409).json({ message: "User is already in the group" });
+    }
+    res.status(500).json({ message: "Server error" });
   }
-
+};
 
 
 
