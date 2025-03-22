@@ -868,33 +868,31 @@ export const getMyGroups = async (
 
 // Get all posts for home feed
 export const getAllPosts = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.user!.id;
-
-    // Fetch all posts, including those from groups the user hasn't joined
+    console.log("GET /api/posts/all request received");
+    
     const posts = await prisma.post.findMany({
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
+        author: { select: { id: true, name: true, email: true } },
         group: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
+    console.log(`Found ${posts.length} posts`);
+    
     res.status(200).json({ success: true, data: posts });
   } catch (error) {
-    console.error(error);
+    console.error("Error in getAllPosts:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
 
 export const getGroupPosts = async (
   req: AuthenticatedRequest,
