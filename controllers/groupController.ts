@@ -186,7 +186,7 @@ export const createGroupPost = async (
 
       // Create the post
       return tx.post.create({
-        data: { title, description:description, mainImg:mediaUrl, secondaryDesc:secondaryDesc,secondaryImg:secondaryImg, groupId, authorId:"67b49a81293a1b1ab92883ff",content },
+        data: { title, description:description, mainImg:mediaUrl, secondaryDesc:secondaryDesc,secondaryImg:secondaryImg, groupId, authorId,content },
       });
     });
 
