@@ -157,9 +157,9 @@ export const createGroupPost = async (
   
   try {
     
-    const { groupId, title, description, secondaryDesc,secondaryImg, content,mediaUrl,authorId ="67b49a81293a1b1ab92883ff" } = req.body;
+    const { groupId, title, description, secondaryDesc,secondaryImg, content,mediaUrl } = req.body;
     console.log("req.body",req.body);
-    // const authorId = req.user!.id;
+    const authorId = req.user!.id;
 
 
     const result = await prisma.$transaction(async (tx) => {
