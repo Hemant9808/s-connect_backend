@@ -436,7 +436,7 @@ export const updateGroup = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { groupId, name, description, category, isPublic } = req.body;
+    const { groupId, name, description, category, isPublic, imageUrl } = req.body;
     const requesterId = req.user!.id;
 
     console.log('Update payload:', { name, description, category, isPublic });
@@ -471,6 +471,7 @@ export const updateGroup = async (
       if (description) updateData.description = description;
       if (category) updateData.category = category;
       if (typeof isPublic === 'boolean') updateData.isPublic = isPublic;
+      if (imageUrl) updateData.imageUrl = imageUrl;
 
       if (Object.keys(updateData).length === 0) {
         throw new ApiError("No valid fields to update", 400);
