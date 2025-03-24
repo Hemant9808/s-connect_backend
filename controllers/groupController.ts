@@ -159,12 +159,15 @@ export const createGroupPost = async (
     
     const { groupId, title, description, secondaryDesc,secondaryImg, content,mediaUrl } = req.body;
     console.log("req.body",req.body);
+    console.log("userid",req.user)
     const authorId = req.user!.id;
+    console.log("userid",authorId)
+
 
 
     const result = await prisma.$transaction(async (tx) => {
       // Fetch group and author details
-      const [group, author] = await Promise.all([
+      const [group,author] = await Promise.all([
         tx.group.findUnique({ where: { id: groupId } }),
         tx.user.findUnique({ where: { id: authorId } }),
       ]);
@@ -385,7 +388,7 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
   try {
      const  { name, description, category, creatorId, members = [], admins = [], tags,imageUrl,year,section,branch } = req.body;
      console.log("req.body",req.body);
-    const group = await prisma.group.create({
+     const group = await prisma.group.create({
       data: {
         name,
         description,
@@ -513,7 +516,6 @@ export const getPostById = async (req: any, res: any) => {
     if (!postId) {
       return res.status(400).json({ success: false, message: "postId is required" });
     }
-
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: {

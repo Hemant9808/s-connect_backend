@@ -101,6 +101,8 @@ model UserDetails {
     @@index([category])
   }
 
+  
+
   model GroupAdmin {
     id        String   @id @default(auto()) @map("_id") @db.ObjectId
     group     Group    @relation(fields: [groupId], references: [id])
