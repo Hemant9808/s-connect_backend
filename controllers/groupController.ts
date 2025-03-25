@@ -932,94 +932,29 @@ export const getGroupPosts = async (
 // };
 
 
-// export const getMyGroups = async (
-//   req: AuthenticatedRequest,
-//   res: Response
-// ): Promise<void> => {
-//   try {
-//     // Check authentication
-//     if (!req.user?.id) {
-//       throw new ApiError("Unauthorized - Missing user ID", 401);
-//     }
-
-//     const userId = req.user.id;
-
-//     // Get groups with proper error handling
-//     const memberships = await prisma.userGroupMembership.findMany({
-//       where: { userId },
-//       include: { 
-//         group: {
-//           include: {
-//             admins: { select: { userId: true } },
-//             createdBy: { select: { id: true } }
-//           }
-//         } 
-//       },
-//     });
-
-//     // Filter out potential null groups and map results
-//     const groups = memberships
-//       .filter(membership => membership.group !== null)
-//       .map(({ group }) => ({
-//         id: group.id,
-//         name: group.name,
-//         description: group.description,
-//         imageUrl: group.imageUrl,
-//         isAdmin: group.admins.some(admin => admin.userId === userId),
-//         isCreator: group.createdById === userId,
-//         createdAt: group.createdAt
-//       }));
-
-//     res.status(200).json({ 
-//       success: true,
-//       count: groups.length,
-//       data: groups
-//     });
-
-//   } catch (error: any) {
-//     console.error("Error in getMyGroups:", error);
-
-//     // Handle known Prisma errors
-//     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Database error",
-//         errorCode: error.code
-//       });
-//     }
-
-    // Handle custom API errors
-    if (error instanceof ApiError) {
-      return res.status(error.statusCode).json({
-        success: false,
-        message: error.message
-      });
-    }
-
-    // Generic error response
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      errorDetails: process.env.NODE_ENV === 'development' 
-        ? error.message 
-        : undefined
-    });
-  }
-};
-export const getMyGroups = async (
+export const fetchJoinedGroups = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
-    // Simple test response
-    console.log("GET /api/group/me hit")
-    res.status(200).json({ 
-      success: true, 
-      message: "Test endpoint working",
-      userId: req.user?.id 
+    // Ensure the user is authenticated
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const userId = req.user.id;
+
+    // Fetch all memberships for the user, including group details
+    const memberships = await prisma.userGroupMembership.findMany({
+      where: { userId },
+      include: { group: true },
     });
+
+    // Map memberships to extract only group data
+    const groups = memberships.map((membership) => membership.group);
+
+    res.status(200).json({ success: true, data: groups });
   } catch (error) {
-    console.error("Error in getMyGroups:", error);
+    console.error("Error fetching joined groups:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
