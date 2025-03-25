@@ -899,34 +899,55 @@ export const getGroupPosts = async (
 };
 
 export const getMyGroups = async (
-  req: AuthenticatedRequest,
+  req: any,
   res: Response
 ): Promise<void> => {
   try {
     const userId = req.user!.id;
 
     const memberships = await prisma.userGroupMembership.findMany({
-      where: { userId },
-      include: {
+      where: { 
+        userId,
+        group: {  // This is correct for filtering
+          id: { not: undefined }
+        }
+      },
+      include: {  // This should be at the top level
         group: {
           select: {
-            id: true,
+            id:true,
             name: true,
             description: true,
             category: true,
             imageUrl: true,
             createdAt: true,
-            // Exclude relations that cause circular references
           },
         },
       },
-      orderBy: { group: { createdAt: 'desc' } },
     });
 
-    const groups = memberships.map((membership) => membership.group);
-    res.status(200).json({ success: true, data: groups });
+    res.status(200).json({ success: true, data: memberships });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+export const getGroups = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+  
+
+    // Fetch posts for the specific group
+     console.log("kjgrjme")
+
+    res.status(200).json({ success: true});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+

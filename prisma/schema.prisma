@@ -75,31 +75,29 @@ model UserDetails {
    
   }
 
-  model Group {
-    id          String       @id @default(auto()) @map("_id") @db.ObjectId
-    name        String
-    description String?
-    imageUrl    String?
-    category    GroupCategory
-    isPublic    Boolean      @default(false)
-    createdAt   DateTime     @default(now())
-    updatedAt   DateTime     @default(now())
-    tags        String[]
-    year        Int?
-    branch      branch?
-    section     String?
+    model Group {
+      id          String       @id @default(auto()) @map("_id") @db.ObjectId
+      name        String
+      description String?
+      imageUrl    String?
+      category    GroupCategory
+      isPublic    Boolean      @default(false)
+      createdAt   DateTime     @default(now())
+      updatedAt   DateTime     @default(now())
+      tags        String[]
+      year        Int?
+      branch      branch?
+      section     String?
+      createdBy   User         @relation("CreatedGroups", fields: [createdById], references: [id])
+      createdById String       @db.ObjectId
 
+      admins      GroupAdmin[]
+      members     UserGroupMembership[]
+      posts       Post[]
 
-    createdBy   User         @relation("CreatedGroups", fields: [createdById], references: [id])
-    createdById String       @db.ObjectId
-
-    admins      GroupAdmin[]
-    members     UserGroupMembership[]
-    posts       Post[]
-
-    @@unique([name, category])
-    @@index([category])
-  }
+      @@unique([name, category])
+      @@index([category])
+    }
 
   
 

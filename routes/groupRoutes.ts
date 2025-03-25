@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware";
-import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById, getGroupById, deleteGroup, editGroupPost, deleteGroupPost, selfAddMember, getMyGroups, getAllPosts,getGroupPosts } from "../controllers/groupController";
+import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById, getGroupById, deleteGroup, editGroupPost, deleteGroupPost, selfAddMember, getMyGroups, getAllPosts,getGroupPosts, getGroups } from "../controllers/groupController";
 
 const router = Router();
 
@@ -23,10 +23,12 @@ router.put("/groups/posts/:postId", editGroupPost);
 
 router.delete("/groups/posts/:postId", deleteGroupPost);
 
-// Get user's joined groups
-router.get('/me', authenticate, getMyGroups);
 
-// Get all posts for home feed
+// Get user's joined groups
+router.post("/me",authenticate, getMyGroups);
+router.post("/abc",getGroups);
+
+// Get a        ll posts for home feed
 router.get('/posts/all', getAllPosts);
 
 router.get("/:groupId/posts", authenticate, getGroupPosts); // Get posts for a specific group
