@@ -937,26 +937,72 @@ export const getMyGroups = async (
   res: Response
 ): Promise<void> => {
   try {
-    // Ensure the user is authenticated
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
+    // Check authentication
+    if (!req.user?.id) {
+      throw new ApiError("Unauthorized - Missing user ID", 401);
     }
 
     const userId = req.user.id;
 
-    // Find memberships for the user and include the group details
+    // Get groups with proper error handling
     const memberships = await prisma.userGroupMembership.findMany({
       where: { userId },
-      include: { group: true },
+      include: { 
+        group: {
+          include: {
+            admins: { select: { userId: true } },
+            createdBy: { select: { id: true } }
+          }
+        } 
+      },
     });
 
-    // Map the memberships to just the group data
-    const groups = memberships.map((membership) => membership.group);
+    // Filter out potential null groups and map results
+    const groups = memberships
+      .filter(membership => membership.group !== null)
+      .map(({ group }) => ({
+        id: group.id,
+        name: group.name,
+        description: group.description,
+        imageUrl: group.imageUrl,
+        isAdmin: group.admins.some(admin => admin.userId === userId),
+        isCreator: group.createdById === userId,
+        createdAt: group.createdAt
+      }));
 
-    res.status(200).json({ success: true, data: groups });
-  } catch (error) {
-    console.error("Error fetching my groups:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(200).json({ 
+      success: true,
+      count: groups.length,
+      data: groups
+    });
+
+  } catch (error: any) {
+    console.error("Error in getMyGroups:", error);
+
+    // Handle known Prisma errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return res.status(400).json({
+        success: false,
+        message: "Database error",
+        errorCode: error.code
+      });
+    }
+
+    // Handle custom API errors
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    // Generic error response
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      errorDetails: process.env.NODE_ENV === 'development' 
+        ? error.message 
+        : undefined
+    });
   }
 };
-
