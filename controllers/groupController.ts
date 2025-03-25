@@ -938,26 +938,34 @@ export const fetchJoinedGroups = async (
 ): Promise<void> => {
   console.log("fetchJoinedGroups: Endpoint hit");
   try {
-    console.log("fetchJoinedGroups: req.user", req.user);
+    // Log the entire request object if needed (or at least req.user)
+    console.log("fetchJoinedGroups: req.user =", req.user);
+    
     if (!req.user) {
-      console.log("fetchJoinedGroups: req.user is not defined");
+      console.log("fetchJoinedGroups: No user found on req");
       return res.status(401).json({ message: "Unauthorized" });
     }
+    
     const userId = req.user.id;
-    console.log("fetchJoinedGroups: userId", userId);
+    console.log("fetchJoinedGroups: userId =", userId);
 
+    // Log before running the Prisma query
+    console.log("fetchJoinedGroups: About to query userGroupMembership for userId", userId);
+    
     const memberships = await prisma.userGroupMembership.findMany({
       where: { userId },
       include: { group: true },
     });
-    console.log("fetchJoinedGroups: memberships", memberships);
+    console.log("fetchJoinedGroups: Retrieved memberships =", JSON.stringify(memberships, null, 2));
 
     const groups = memberships.map((membership) => membership.group);
-    console.log("fetchJoinedGroups: groups", groups);
+    console.log("fetchJoinedGroups: Extracted groups =", JSON.stringify(groups, null, 2));
 
+    console.log("fetchJoinedGroups: Sending response");
     res.status(200).json({ success: true, data: groups });
   } catch (error: any) {
-    console.error("Error in fetchJoinedGroups:", error.stack || error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    // Log full error details; if error.message isn't available, log the entire error
+    console.error("fetchJoinedGroups: Error caught:", error.stack || error.toString() || error);
+    res.status(500).json({ message: "Server error", error: error.message || error.toString() });
   }
 };
