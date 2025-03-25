@@ -937,24 +937,27 @@ export const fetchJoinedGroups = async (
   res: Response
 ): Promise<void> => {
   try {
-    // Ensure the user is authenticated
+    console.log("fetchJoinedGroups: Request received", { user: req.user });
     if (!req.user) {
+      console.log("fetchJoinedGroups: req.user is not defined");
       return res.status(401).json({ message: "Unauthorized" });
     }
     const userId = req.user.id;
+    console.log("fetchJoinedGroups: userId", userId);
 
-    // Fetch all memberships for the user, including group details
     const memberships = await prisma.userGroupMembership.findMany({
       where: { userId },
       include: { group: true },
     });
+    console.log("fetchJoinedGroups: memberships", memberships);
 
-    // Map memberships to extract only group data
     const groups = memberships.map((membership) => membership.group);
+    console.log("fetchJoinedGroups: groups", groups);
 
     res.status(200).json({ success: true, data: groups });
-  } catch (error) {
-    console.error("Error fetching joined groups:", error);
-    res.status(500).json({ message: "Server error" });
+  } catch (error: any) {
+    console.error("Error in fetchJoinedGroups:", error);
+    // Log additional error details if available
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
