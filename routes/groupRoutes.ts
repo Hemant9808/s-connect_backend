@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware";
-import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById, getGroupById, deleteGroup, editGroupPost, deleteGroupPost, selfAddMember, getMyGroups, getAllPosts,getGroupPosts } from "../controllers/groupController";
+import { addGroupMember, createGroupPost, getGroupMembers, makeGroupAdmin, getAllGroups, removeGroupAdmin, createGroup, updateGroup, getPosts, getPostById, getGroupById, deleteGroup, editGroupPost, deleteGroupPost, selfAddMember, getMyGroups, getAllPosts,getGroupPosts, fetchJoinedGroups } from "../controllers/groupController";
 
 const router = Router();
 
@@ -28,6 +28,9 @@ router.get('/me', authenticate, getMyGroups);
 
 // Get all posts for home feed
 router.get('/posts/all', getAllPosts);
+
+// New endpoint to fetch groups the user has joined
+router.get("/fetchjoinedgroups", authenticate, fetchJoinedGroups);
 
 router.get("/:groupId/posts", authenticate, getGroupPosts); // Get posts for a specific group
 
