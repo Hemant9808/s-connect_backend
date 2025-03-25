@@ -937,81 +937,26 @@ export const getMyGroups = async (
   res: Response
 ): Promise<void> => {
   try {
+    // Ensure the user is authenticated
     if (!req.user) {
-      throw new ApiError("Unauthorized", 401);
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const userId = req.user.id;
-    const userRole = req.user.role;
 
-    let groups;
+    // Find memberships for the user and include the group details
+    const memberships = await prisma.userGroupMembership.findMany({
+      where: { userId },
+      include: { group: true },
+    });
 
-    // If super admin, return all groups. Otherwise, return only groups where user is directly related.
-    if (userRole === UserRole.SUPER_ADMIN) {
-      groups = await prisma.group.findMany({
-        include: {
-          createdBy: { select: { id: true, name: true, email: true } },
-          admins: {
-            select: {
-              user: { select: { id: true, name: true, email: true } },
-            },
-          },
-          members: {
-            select: {
-              user: { select: { id: true, name: true, email: true } },
-            },
-          },
-          posts: {
-            select: { id: true, title: true, createdAt: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-    } else {
-      // For regular/admin users, fetch groups where they are the creator, in the admins list, or in the members list.
-      groups = await prisma.group.findMany({
-        where: {
-          OR: [
-            { createdById: userId },
-            { admins: { some: { userId } } },
-            { members: { some: { userId } } },
-          ],
-        },
-        include: {
-          createdBy: { select: { id: true, name: true, email: true } },
-          admins: {
-            select: {
-              user: { select: { id: true, name: true, email: true } },
-            },
-          },
-          members: {
-            select: {
-              user: { select: { id: true, name: true, email: true } },
-            },
-          },
-          posts: {
-            select: { id: true, title: true, createdAt: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-    }
+    // Map the memberships to just the group data
+    const groups = memberships.map((membership) => membership.group);
 
-    // Optionally, add summary fields for convenience
-    const groupsWithSummary = groups.map((group) => ({
-      ...group,
-      totalMembers: group.members.length,
-      totalPosts: group.posts.length,
-    }));
-
-    res.status(200).json({ success: true, data: groupsWithSummary });
+    res.status(200).json({ success: true, data: groups });
   } catch (error) {
     console.error("Error fetching my groups:", error);
-    if (error instanceof ApiError) {
-      res.status(error.statusCode).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: "Server error" });
-    }
+    res.status(500).json({ message: "Server error" });
   }
 };
 
