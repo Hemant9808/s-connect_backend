@@ -929,25 +929,7 @@ export const getMyGroups = async (
     res.status(200).json({ success: true, data: memberships });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  } 
-};
-
-
-export const getGroups = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
-  try {
-  
-
-    // Fetch posts for the specific group
-     console.log("kjgrjme")
-
-    res.status(200).json({ success: true});
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
+    res.status(500).json({ message: 'Server error' });
+  } 
 };
 
