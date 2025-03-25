@@ -934,50 +934,100 @@ export const getGroupPosts = async (
 
 
 
+import { Request, Response } from "express";
+import { UserRole } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+import ApiError from "../utils/error";
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    role: UserRole;
+  };
+}
+
+const prisma = new PrismaClient();
+
 export const getMyGroups = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
-    const userId = req.user!.id;
-    const userRole = req.user!.role;
+    if (!req.user) {
+      throw new ApiError("Unauthorized", 401);
+    }
 
-    // Fetch groups based on user role and relationships
-    const groups = await prisma.group.findMany({
-      where: userRole === UserRole.SUPER_ADMIN 
-        ? {}  // Super admins get all groups
-        : {
-            OR: [
-              { members: { some: { userId } } },  // Groups user is member of
-              { admins: { some: { userId } } },    // Groups user is admin of
-              { createdById: userId }              // Groups user created
-            ]
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    let groups;
+
+    // If super admin, return all groups. Otherwise, return only groups where user is directly related.
+    if (userRole === UserRole.SUPER_ADMIN) {
+      groups = await prisma.group.findMany({
+        include: {
+          createdBy: { select: { id: true, name: true, email: true } },
+          admins: {
+            select: {
+              user: { select: { id: true, name: true, email: true } },
+            },
           },
-      include: {
-        admins: {
-          include: { user: { select: { id: true, name: true } }
+          members: {
+            select: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
+          posts: {
+            select: { id: true, title: true, createdAt: true },
+          },
         },
-        members: true,
-        createdBy: { select: { id: true, name: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+        orderBy: { createdAt: "desc" },
+      });
+    } else {
+      // For regular/admin users, fetch groups where they are the creator, in the admins list, or in the members list.
+      groups = await prisma.group.findMany({
+        where: {
+          OR: [
+            { createdById: userId },
+            { admins: { some: { userId } } },
+            { members: { some: { userId } } },
+          ],
+        },
+        include: {
+          createdBy: { select: { id: true, name: true, email: true } },
+          admins: {
+            select: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
+          members: {
+            select: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
+          posts: {
+            select: { id: true, title: true, createdAt: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
 
-    // Format response
-    const formattedGroups = groups.map(group => ({
-      id: group.id,
-      name: group.name,
-      description: group.description,
-      imageUrl: group.imageUrl,
-      isAdmin: group.admins.some(admin => admin.userId === userId),
-      isCreator: group.createdById === userId,
-      memberCount: group.members.length,
-      createdAt: group.createdAt
+    // Optionally, add summary fields for convenience
+    const groupsWithSummary = groups.map((group) => ({
+      ...group,
+      totalMembers: group.members.length,
+      totalPosts: group.posts.length,
     }));
 
-    res.status(200).json({ success: true, data: formattedGroups });
+    res.status(200).json({ success: true, data: groupsWithSummary });
   } catch (error) {
-    console.error('Error fetching groups:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Error fetching my groups:", error);
+    if (error instanceof ApiError) {
+      res.status(error.statusCode).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Server error" });
+    }
   }
 };
+
