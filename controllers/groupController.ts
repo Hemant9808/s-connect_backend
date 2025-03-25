@@ -936,8 +936,9 @@ export const fetchJoinedGroups = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
+  console.log("fetchJoinedGroups: Endpoint hit");
   try {
-    console.log("fetchJoinedGroups: Request received", { user: req.user });
+    console.log("fetchJoinedGroups: req.user", req.user);
     if (!req.user) {
       console.log("fetchJoinedGroups: req.user is not defined");
       return res.status(401).json({ message: "Unauthorized" });
@@ -956,8 +957,7 @@ export const fetchJoinedGroups = async (
 
     res.status(200).json({ success: true, data: groups });
   } catch (error: any) {
-    console.error("Error in fetchJoinedGroups:", error);
-    // Log additional error details if available
+    console.error("Error in fetchJoinedGroups:", error.stack || error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
