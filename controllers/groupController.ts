@@ -932,22 +932,6 @@ export const getGroupPosts = async (
 // };
 
 
-
-
-import { Request, Response } from "express";
-import { UserRole } from "@prisma/client";
-import { PrismaClient } from "@prisma/client";
-import ApiError from "../utils/error";
-
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    role: UserRole;
-  };
-}
-
-const prisma = new PrismaClient();
-
 export const getMyGroups = async (
   req: AuthenticatedRequest,
   res: Response
