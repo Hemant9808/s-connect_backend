@@ -1012,13 +1012,14 @@ export const getMyGroups = async (
 ): Promise<void> => {
   try {
     // Simple test response
+    console.log("GET /api/group/me hit")
     res.status(200).json({ 
       success: true, 
       message: "Test endpoint working",
       userId: req.user?.id 
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error in getMyGroups:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
