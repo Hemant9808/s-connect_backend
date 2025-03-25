@@ -964,8 +964,13 @@ export const fetchJoinedGroups = async (
     console.log("fetchJoinedGroups: Sending response");
     res.status(200).json({ success: true, data: groups });
   } catch (error: any) {
-    // Log full error details; if error.message isn't available, log the entire error
-    console.error("fetchJoinedGroups: Error caught:", error.stack || error.toString() || error);
-    res.status(500).json({ message: "Server error", error: error.message || error.toString() });
+  console.error("fetchJoinedGroups: Full error details:", error);
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    console.error("Prisma error code:", error.code);
   }
+  res.status(500).json({ 
+    message: "Server error", 
+    error: error.message || "Unknown error",
+    details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+  });
 };
