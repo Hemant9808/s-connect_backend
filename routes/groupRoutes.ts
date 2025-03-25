@@ -31,6 +31,9 @@ router.post("/abc",getGroups);
 // Get a        ll posts for home feed
 router.get('/posts/all', getAllPosts);
 
+// New endpoint to fetch groups the user has joined
+router.get("/fetchjoinedgroups", authenticate, getMyGroups);
+
 router.get("/:groupId/posts", authenticate, getGroupPosts); // Get posts for a specific group
 
 export default router;
