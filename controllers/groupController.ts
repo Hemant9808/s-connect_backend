@@ -898,79 +898,37 @@ export const getGroupPosts = async (
   }
 };
 
-// export const getMyGroups = async (
-//   req: AuthenticatedRequest,
-//   res: Response
-// ): Promise<void> => {
-//   try {
-//     const userId = req.user!.id;
-
-//     const memberships = await prisma.userGroupMembership.findMany({
-//       where: { userId },
-//       include: {
-//         group: {
-//           select: {
-//             id: true,
-//             name: true,
-//             description: true,
-//             category: true,
-//             imageUrl: true,
-//             createdAt: true,
-//             // Exclude relations that cause circular references
-//           },
-//         },
-//       },
-//       orderBy: { group: { createdAt: 'desc' } },
-//     });
-
-//     const groups = memberships.map((membership) => membership.group);
-//     res.status(200).json({ success: true, data: groups });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Server error' });
-//   }
-// };
-
-
-export const fetchJoinedGroups = async (
-  req: AuthenticatedRequest,
+export const getMyGroups = async (
+  req: any,
   res: Response
 ): Promise<void> => {
-  console.log("fetchJoinedGroups: Endpoint hit");
   try {
-    // Log the entire request object if needed (or at least req.user)
-    console.log("fetchJoinedGroups: req.user =", req.user);
-    
-    if (!req.user) {
-      console.log("fetchJoinedGroups: No user found on req");
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    const userId = req.user.id;
-    console.log("fetchJoinedGroups: userId =", userId);
+    const userId = req.user!.id;
 
-    // Log before running the Prisma query
-    console.log("fetchJoinedGroups: About to query userGroupMembership for userId", userId);
-    
     const memberships = await prisma.userGroupMembership.findMany({
-      where: { userId },
-      include: { group: true },
+      where: { 
+        userId,
+        group: {  // This is correct for filtering
+          id: { not: undefined }
+        }
+      },
+      include: {  // This should be at the top level
+        group: {
+          select: {
+            id:true,
+            name: true,
+            description: true,
+            category: true,
+            imageUrl: true,
+            createdAt: true,
+          },
+        },
+      },
     });
-    console.log("fetchJoinedGroups: Retrieved memberships =", JSON.stringify(memberships, null, 2));
 
-    const groups = memberships.map((membership) => membership.group);
-    console.log("fetchJoinedGroups: Extracted groups =", JSON.stringify(groups, null, 2));
-
-    console.log("fetchJoinedGroups: Sending response");
-    res.status(200).json({ success: true, data: groups });
-  } catch (error: any) {
-  console.error("fetchJoinedGroups: Full error details:", error);
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    console.error("Prisma error code:", error.code);
-  }
-  res.status(500).json({ 
-    message: "Server error", 
-    error: error.message || "Unknown error",
-    details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-  });
+    res.status(200).json({ success: true, data: memberships });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  } 
 };
