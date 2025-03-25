@@ -898,35 +898,86 @@ export const getGroupPosts = async (
   }
 };
 
+// export const getMyGroups = async (
+//   req: AuthenticatedRequest,
+//   res: Response
+// ): Promise<void> => {
+//   try {
+//     const userId = req.user!.id;
+
+//     const memberships = await prisma.userGroupMembership.findMany({
+//       where: { userId },
+//       include: {
+//         group: {
+//           select: {
+//             id: true,
+//             name: true,
+//             description: true,
+//             category: true,
+//             imageUrl: true,
+//             createdAt: true,
+//             // Exclude relations that cause circular references
+//           },
+//         },
+//       },
+//       orderBy: { group: { createdAt: 'desc' } },
+//     });
+
+//     const groups = memberships.map((membership) => membership.group);
+//     res.status(200).json({ success: true, data: groups });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+
+
 export const getMyGroups = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
     const userId = req.user!.id;
+    const userRole = req.user!.role;
 
-    const memberships = await prisma.userGroupMembership.findMany({
-      where: { userId },
-      include: {
-        group: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            category: true,
-            imageUrl: true,
-            createdAt: true,
-            // Exclude relations that cause circular references
+    // Fetch groups based on user role and relationships
+    const groups = await prisma.group.findMany({
+      where: userRole === UserRole.SUPER_ADMIN 
+        ? {}  // Super admins get all groups
+        : {
+            OR: [
+              { members: { some: { userId } } },  // Groups user is member of
+              { admins: { some: { userId } } },    // Groups user is admin of
+              { createdById: userId }              // Groups user created
+            ]
           },
+      include: {
+        admins: {
+          include: { user: { select: { id: true, name: true } }
         },
+        members: true,
+        createdBy: { select: { id: true, name: true } }
       },
-      orderBy: { group: { createdAt: 'desc' } },
+      orderBy: { createdAt: 'desc' }
     });
 
-    const groups = memberships.map((membership) => membership.group);
-    res.status(200).json({ success: true, data: groups });
+    // Format response
+    const formattedGroups = groups.map(group => ({
+      id: group.id,
+      name: group.name,
+      description: group.description,
+      imageUrl: group.imageUrl,
+      isAdmin: group.admins.some(admin => admin.userId === userId),
+      isCreator: group.createdById === userId,
+      memberCount: group.members.length,
+      createdAt: group.createdAt
+    }));
+
+    res.status(200).json({ success: true, data: formattedGroups });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching groups:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
