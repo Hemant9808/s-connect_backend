@@ -27,7 +27,7 @@ router.delete("/groups/posts/:postId", deleteGroupPost);
 router.get('/me', authenticate, getMyGroups);
 
 // Get all posts for home feed
-router.get('/posts/all', getAllPosts);
+router.post('/posts/all', getAllPosts);
 
 // New endpoint to fetch groups the user has joined
 router.get("/fetchjoinedgroups", authenticate, fetchJoinedGroups);
